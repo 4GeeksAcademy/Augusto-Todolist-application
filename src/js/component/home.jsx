@@ -1,84 +1,79 @@
-import React, { useState, useEffect } from "react";
+import React from "react";
 
-const TodoList = () => {
-  const [tasks, setTasks] = useState([]);
-  const [newTaskLabel, setNewTaskLabel] = useState("");
+const Home = () => {
+  const [todoList, setTodoList] = React.useState([])
+  const [inputValue, setInputValue] = React.useState("")
+  const API_URL = "https://assets.breatheco.de/apis/fake/todos/user/AugustoSchemberger"
 
-  useEffect(() => {
-    fetchTasks();
-  }, []);
+  const handleAddNewTodo = () => {
+    setTodoList(prev => [...prev, { label: inputValue, done: false }])
+  }
 
-  const fetchTasks = () => {
-    fetch("https://playground.4geeks.com/apis/fake/todos/")
-      .then((response) => response.json())
-      .then((data) => {
-        setTasks(data);
-      })
-      .catch((error) => console.error("Error fetching tasks:", error));
+  const handleDeleteTodo = (indexToRemove) => {
+    setTodoList(prev => prev.filter((index) => index !== indexToRemove))
+  }
+
+  const handleOnKeyDown = (e) => {
+    const keyPressed = e.key
+
+
+    if (inputValue && keyPressed === "Enter") {
+      handleAddNewTodo();
+      setInputValue("");
+    }
+  }
+
+  const handleDeleteAll = () => {
+    setTodoList([]);
   };
 
-  const handleAddTask = () => {
-    const newTask = { label: newTaskLabel, done: false };
+  React.useEffect(() => {
+    fetch(API_URL)
+      .then(promiseResponse => {
+        if (promiseResponse.ok)
+          return promiseResponse.json().then(data => setTodoList(data))
 
-    fetch("https://playground.4geeks.com/apis/fake/todos/", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(newTask),
-    })
-      .then((response) => response.json())
-      .then(() => {
-        fetchTasks(); 
-        setNewTaskLabel(""); 
-      })
-      .catch((error) => console.error("Error adding task:", error));
-  };
-
-  const handleDeleteTask = (taskId) => {
-    fetch(`https://playground.4geeks.com/apis/fake/todos/${taskId}`, {
-      method: "DELETE",
-    })
-      .then((response) => {
-        if (response.ok) {
-          const updatedTasks = tasks.filter((task) => task.id !== taskId);
-          setTasks(updatedTasks);
-        } else {
-          console.error("Error deleting task:", response.statusText);
+        const createUserOptions = {
+          method: "POST",
+          body: JSON.stringify([]),
+          headers: { "Content-Type": "application/json" }
         }
-      })
-      .catch((error) => console.error("Error deleting task:", error));
-  };
-  
+        fetch(API_URL, createUserOptions)
 
-  const handleResetList = () => {
-    setTasks([]);
-  };
-  
+      })
+
+  }, [])
+
+  React.useEffect(() => {
+
+    if (todoList.length > 0) {
+      const udpateTodoOptions = {
+        method: "PUT",
+        body: JSON.stringify(todoList),
+        headers: { "Content-Type": "application/json" }
+      }
+      fetch(API_URL, udpateTodoOptions)
+    }
+
+  }, [todoList])
 
   return (
-    <div>
-      <h1>Todo List</h1>
-      <ul>
-        {tasks.map((task) => (
-          <li key={task.id}>
-            {task.label}
-            <button onClick={() => handleDeleteTask(task.id)}>Eliminar</button>
-          </li>
-        ))}
+    <div className="text-center bg-light mx-3 shadow-sm">
+      <h1 className="mt-3">TodoList</h1>
+      <input className="border w-100  text-center" placeholder="Escriba su Tarea" onKeyDown={handleOnKeyDown} value={inputValue} onChange={(e) => setInputValue(e.target.value)} />
+      <ul style={{ margin: "1rem" }}>
+        {
+          todoList.map((singleTodo, index) => {
+            return <section key={index} style={{ display: "flex", justifyContent: "space-between" }}>
+              <li >{singleTodo.label}</li>
+              <button className="btn" onClick={() => handleDeleteTodo(index)}>{`X`}</button>
+            </section>
+          })
+        }
       </ul>
-      <div>
-        <input
-          type="text"
-          placeholder="Nueva tarea"
-          value={newTaskLabel}
-          onChange={(e) => setNewTaskLabel(e.target.value)}
-        />
-        <button onClick={handleAddTask}>Agregar Tarea</button>
-      </div>
-      <button onClick={handleResetList}>Limpiar Lista</button>
+      <button className="btn" onClick={handleDeleteAll} >Eliminar</button>
     </div>
   );
 };
 
-export default TodoList;
+export default Home;
